@@ -1,3 +1,19 @@
+// PaperClock
+// Copyright (C) 2021  Yoann VERMAUT
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 #include <SPI.h>
 #include <Arduino_HTS221.h>
 #include "epd7in5b_HD.h"
@@ -30,6 +46,7 @@ int btnHoursLast;
 int btnMinutesLast;
 bool forcedRefresh = false;
 
+// Arduino setup function
 void setup() {
 
   // "ON" LED turned off
@@ -46,23 +63,19 @@ void setup() {
   delay(100);
   last = millis();
 
-  // Meteo data
-  //HTS.begin();
-
   // Button setup
   pinMode(BTN_HOURS_PIN, INPUT_PULLUP);
   pinMode(BTN_MINUTES_PIN, INPUT_PULLUP);
   btnHoursLast = true;
   btnMinutesLast = true;
   
-  
   // First ePaper refresh
   RefreshEnvData();
   RefreshScreen();
 
-  // ClearScreen();
 }
 
+// Arduino main loop function
 void loop() {
 
   // Wait
@@ -79,6 +92,7 @@ void loop() {
 
 }
 
+// Update the clock value by adding n minute(s)
 void IncrementClock(int min) {
   if(forcedRefresh) {
     forcedRefresh = false;
@@ -95,22 +109,20 @@ void IncrementClock(int min) {
   }
 }
 
+// Wait during n miliseconds
+// but during waiting, poll buttons states
 void PrecisionWaitAndPoll(uint32_t ms) {
 
   // Remove screen refresh time from time to wait
   ms -= millis() - last;
   
+  // Each 100ms, poll buttons states
   for(uint32_t  i=0; i < ms/100; i++) {
     // Wait 100ms
     delay(100);
     last = millis();
-    
-    //while((now-last) < 100) {
-    //  now = millis();
-    //}
-    //last = now;  
 
-    // Manage buttons polling
+    // Poll hours button state
     int btnHoursState = digitalRead(BTN_HOURS_PIN);
     
     // User just pushed hours button
@@ -128,6 +140,7 @@ void PrecisionWaitAndPoll(uint32_t ms) {
       digitalWrite(LED_PWR, LOW);
     }
 
+    // Poll minutes button state
     int btnMinutesState = digitalRead(BTN_MINUTES_PIN);
     
     // User just pushed minutes button
@@ -153,43 +166,59 @@ void PrecisionWaitAndPoll(uint32_t ms) {
   
 }
 
-void ManageButtons() {
-  
-}
-
+// Refresh sensors values (temperature and humidity)
 void RefreshEnvData() {
+    // Re enable sensors
     digitalWrite(PIN_ENABLE_SENSORS_3V3, HIGH);
     digitalWrite(PIN_ENABLE_I2C_PULLUP, HIGH); 
     delay(10);
+    
+    // Start HTS sensor
     HTS.begin();
     delay(10);
+
+    // Read sensors values
     temperature = HTS.readTemperature();
     humidity = HTS.readHumidity();
+
+    // Stop sensor
     HTS.end();
     delay(10);
+
+    // Disable sensors
     digitalWrite(PIN_ENABLE_SENSORS_3V3, LOW);
     digitalWrite(PIN_ENABLE_I2C_PULLUP, LOW); 
 }
 
+// Refresh the e-ink display
 void RefreshScreen() {
+
+  // Clear the display buffers
   screenBlack.Clear(1);
   screenRed.Clear(1);
 
+  // Cast and format clock and sensors values into strings
   char clck[24];
   char meteo[24];
   sprintf(clck, "%2d:%02d", hours, minutes);
   sprintf(meteo, "%.0f\' %.0f%%", temperature, humidity);
   
+  // Draw strings values into buffers
   screenBlack.DrawStringAt(100,50,clck, &Font200, 0);
   screenBlack.DrawStringAt(55,340,meteo, &Font160, 0);
 
+  // Wake up display
   epd.Init();
+
+  // Refresh display with new rendered buffers
   epd.Displaypart(bufferBlack,0, 0,880,528, 0);
   epd.Displaypart(bufferRed,0, 0,880,528, 1);
 
+  // Stop display
   epd.Sleep();
 }
 
+// Clear the e-ink display (blank white)
 void ClearScreen() {
   const unsigned char blank[1] = {0x00};
   epd.Displaypart(blank,0,0,0,0,0);
