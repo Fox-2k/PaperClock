@@ -101,7 +101,7 @@ The frame STL files are freely available on [cults3D platform](https://cults3d.c
 * The frame to hold the ePaper display and to make your clock beautiful
 * The support to hold the PCB, the battery and the display from the back
 
-Theses pieces are tied together with M3x6mm screws. Once your pieces are printed, you have to put [M3x3mm brass knurled threaded round inserts](https://www.amazon.co.uk/s?k=M3x3mm+brass+knurled+threaded+round+inserts) with the help of a soldering iron. (Pay attention not to melt your PLA printed frame !! 200°C is far enought to put them on)
+Theses pieces are tied together with M3x6mm screws. Once your pieces are printed, you have to put [M3x3mm brass knurled threaded round inserts](https://www.amazon.co.uk/s?k=M3x3mm+brass+knurled+threaded+round+inserts) with the help of a soldering iron. (Pay attention not to melt your PLA printed frame !! 200°C is far enough to put them on)
 
 ![The frame](references/paperclock_frame.jpg)
 
