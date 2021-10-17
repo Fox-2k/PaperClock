@@ -79,10 +79,16 @@ void setup() {
 void loop() {
 
   // Wait
-  PrecisionWaitAndPoll(REFRESH_PERIOD_MINUTES*60000);
+  forcedRefresh = PrecisionWaitAndPoll(REFRESH_PERIOD_MINUTES*60000);
   
-  // update clock
-  IncrementClock(REFRESH_PERIOD_MINUTES);
+  if(!forcedRefresh) {
+    // update clock
+    IncrementClock(REFRESH_PERIOD_MINUTES);
+  }
+  else {
+    // Don't update, as user just set up the clock
+    forcedRefresh = false;
+  }
 
   // Get temperature and humidity
   RefreshEnvData();
@@ -94,24 +100,21 @@ void loop() {
 
 // Update the clock value by adding n minute(s)
 void IncrementClock(int min) {
-  if(forcedRefresh) {
-    forcedRefresh = false;
+  minutes += min;
+  if(minutes >= 60) {
+    hours += minutes / 60;
+    minutes = minutes % 60;
   }
-  else {
-    minutes += min;
-    if(minutes >= 60) {
-      hours++;
-      minutes = minutes % 60;
-    }
-    if(hours >= 24) {
-      hours = 0;
-    }
+  if(hours >= 24) {
+    hours = hours % 24;
   }
 }
 
 // Wait during n miliseconds
 // but during waiting, poll buttons states
-void PrecisionWaitAndPoll(uint32_t ms) {
+bool PrecisionWaitAndPoll(uint32_t ms) {
+
+  bool needToRefresh = false;
 
   // Remove screen refresh time from time to wait
   ms -= millis() - last;
@@ -127,7 +130,7 @@ void PrecisionWaitAndPoll(uint32_t ms) {
     
     // User just pushed hours button
     if(btnHoursState == LOW && btnHoursLast == HIGH) {
-      hours++;
+      IncrementClock(60);
       btnHoursLast = btnHoursState;
       digitalWrite(LED_PWR, HIGH);
     }
@@ -136,7 +139,7 @@ void PrecisionWaitAndPoll(uint32_t ms) {
     if(btnHoursState == HIGH && btnHoursLast == LOW) {
       btnHoursLast = btnHoursState;
       lastBtnRelease = millis();
-      forcedRefresh = true;
+      needToRefresh = true;
       digitalWrite(LED_PWR, LOW);
     }
 
@@ -145,7 +148,7 @@ void PrecisionWaitAndPoll(uint32_t ms) {
     
     // User just pushed minutes button
     if(btnMinutesState == LOW && btnMinutesLast == HIGH) {
-      minutes++;
+      IncrementClock(1);
       btnMinutesLast = btnMinutesState;
       digitalWrite(LED_PWR, HIGH);
     }
@@ -154,16 +157,16 @@ void PrecisionWaitAndPoll(uint32_t ms) {
     if(btnMinutesState == HIGH && btnMinutesLast == LOW) {
       btnMinutesLast = btnMinutesState;
       lastBtnRelease = millis();
-      forcedRefresh = true;
+      needToRefresh = true;
       digitalWrite(LED_PWR, LOW);
     }
 
-    if(last - lastBtnRelease > 5000 && forcedRefresh == true) {
+    if(last - lastBtnRelease > 5000 && needToRefresh == true) {
       break;
     }
     
   }
-  
+  return needToRefresh;
 }
 
 // Refresh sensors values (temperature and humidity)
