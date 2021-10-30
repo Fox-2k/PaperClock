@@ -182,7 +182,7 @@ void RefreshEnvData() {
 
     // Read sensors values
     temperature = HTS.readTemperature();
-    humidity = HTS.readHumidity();
+    humidity = max(min(HTS.readHumidity(), 100), 0);
 
     // Stop sensor
     HTS.end();
@@ -204,7 +204,7 @@ void RefreshScreen() {
   char clck[24];
   char meteo[24];
   sprintf(clck, "%2d:%02d", hours, minutes);
-  sprintf(meteo, "%.0f\' %.0f%%", temperature, humidity);
+  sprintf(meteo, "%.0f\'%3.0f%%", temperature, humidity);
   
   // Draw strings values into buffers
   screenBlack.DrawStringAt(100,50,clck, &Font200, 0);
